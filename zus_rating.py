@@ -93,7 +93,7 @@ def send_email(rating, count):
         auth=("api", keys[1]),
         files=[("attachment", open(attachmentFile))],
         data={"from": "ZUS iOS Rating Team <dongdong@nonda.us>",
-              "to": ["dongdong@nonda.us"],
+              "to": ["zus-dev@nonda.us"],
               "subject": "Daily Report - ZUS App iOS Rating - " + str(rating) + "/4.5(" + str(int(count)) + ")",
               "text": "Rating: " + str(rating) + "/4.5(" + str(int(count)) + ")" })
 
