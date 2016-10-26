@@ -1,7 +1,7 @@
 import urllib2, json, xmltodict
 from io import StringIO
 import csv, codecs, requests
-import string, time
+import string, time, operator
 
 def getRatingsFromUrl(url):
 	pageSum = 1
@@ -97,34 +97,41 @@ def send_email(rating, count):
               "subject": "Daily Report - ZUS App iOS Rating - " + str(rating) + "/4.5(" + str(int(count)) + ")",
               "text": "Rating: " + str(rating) + "/4.5(" + str(int(count)) + ")" })
 
+def get_today_reviews():
+	countries = getContryList()
+	reviews = []
+
+	for c in countries: 	
+	 	reviewsCountry = getRatingsFromCountry(c)
+	 	if reviewsCountry == None:
+	 		continue
+
+		for review in reviewsCountry:
+			review.insert(0, c)
+			reviews.append(review)
+
+	return reviews
+
+def sort_reviews(lists):
+	return sorted(lists, key=lambda x: x[1])
+
+newList = sort_reviews(get_today_reviews())[::-1]
 today = time.strftime('_%Y_%m_%d',time.localtime(time.time()))
 csvfile = file('zus_q4_ios_review' + today + '.csv', 'wb')
 csvfile.write(codecs.BOM_UTF8)
 writer = csv.writer(csvfile, quoting=csv.QUOTE_NONNUMERIC)
-
 writer.writerow(['Country', 'Date', 'Rating', 'Version', 'Name', 'Title', 'Content'])
-
-countries = getContryList()
 
 ratingSum = 0.0
 ratingCount = 0.0
-
-for c in countries: 	
- 	reviews = getRatingsFromCountry(c)
- 	if reviews == None:
- 		continue
-
-	for review in reviews:
-		review.insert(0, c)
-		writer.writerow([unicode(s).encode("utf-8") for s in review])
-
-		ratingCount = ratingCount + 1
-		ratingSum = ratingSum + float(review[2])
-
-csvfile.close()
+for review in newList:
+	ratingSum = ratingSum + int(review[2])
+	ratingCount = ratingCount + 1
+	writer.writerow([unicode(s).encode("utf-8") for s in review])
 
 averageRating = round(ratingSum/ratingCount, 1)
+writer.writerow(['', '', str(averageRating)])
+csvfile.close()
 
 print averageRating, ratingCount
-
 print send_email(averageRating, ratingCount)
